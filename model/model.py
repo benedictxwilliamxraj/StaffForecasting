@@ -3,7 +3,7 @@ from darts.models import Prophet
 from darts import TimeSeries
 import streamlit as st
 
-@st.cache_data
+@st.cache_resource
 def load_model(df, project):
     series = TimeSeries.from_dataframe(df, time_col='Year-week', value_cols='NUMBERREGISTERED',fill_missing_dates=True, freq='W')
     model = Prophet( weekly_seasonality=True, seasonality_mode='multiplicative', seasonality_prior_scale=8)
