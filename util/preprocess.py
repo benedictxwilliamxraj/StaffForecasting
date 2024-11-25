@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import date
 import datetime
 
+@st.cache_data
 def addattributesdata(data, datecol):
     pd.options.mode.copy_on_write = True
     data[datecol] = pd.to_datetime(data[datecol], format='%m/%d/%Y')
@@ -10,6 +11,7 @@ def addattributesdata(data, datecol):
     data.loc[:, 'week'] = data[datecol].dt.isocalendar().week
     return data
 
+@st.cache_data
 def Cleandata(data):
     # dropping projects
     # PROJECTNAME: 25,15,35,36
