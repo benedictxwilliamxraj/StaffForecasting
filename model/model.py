@@ -1,6 +1,7 @@
 import pickle
 from darts.models import Prophet
 from darts import TimeSeries
+import streamlit as st
 
 @st.cache_data
 def load_model(df, project):

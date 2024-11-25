@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import date
 import datetime
+import streamlit as st
 
 @st.cache_data
 def addattributesdata(data, datecol):
