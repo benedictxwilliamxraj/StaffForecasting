@@ -57,3 +57,5 @@ def assigncat(categorynumber):
     else:
         cat = 'MAN'
     return cat
+
+#def get_hours()

@@ -1,5 +1,6 @@
 from scipy.optimize import linprog
 
+
 def allocate_employees(project_hours, categories, max_employees):
     # Extract category details
     category_names = list(categories.keys())

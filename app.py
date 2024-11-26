@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from model import model as ml_model
-from util import preprocess, employee_alloc
+from model import models as ms
+from util import preprocess, employee_alloc, emp_all
 import plotly.express as px
 import os
 import plotly.graph_objects as go
@@ -34,7 +34,7 @@ if __name__=="__main__":
     forecast_week = st.sidebar.number_input("Week",min_value=1, max_value=52, step=1, value=50)
     #Efficiency of employee
     st.sidebar.subheader("Efficiency")
-    eff_percent = st.sidebar.number_input("in %",min_value=0, max_value=100, step=1, value=30)
+    eff_percent = st.sidebar.number_input("in %",min_value=60, max_value=100, step=1, value=60)
     # Employee count
     st.sidebar.subheader("CATEGORY")
     man_count = st.sidebar.number_input("MAN",min_value=0, max_value=100, step=1, value=74)
@@ -55,11 +55,29 @@ if __name__=="__main__":
     else:
         st.warning("No data available for the selected filters.")
 
-    # Load model
+
+    non_seasonal_projects = [13,20,21,22,23,33,37,38] # remove 20, 37
+    # Build model
     seasonal_projects = [10,11,12,14,17,18,19,24]
+    series_df = {}
+    for i in seasonal_projects:
+        series = f"series_{i}"
+        series_df[series] = ms.load_series(agg_data[(agg_data['PROJECTNAME']==i)],i)
+
+#     models = {}
+#     for i in seasonal_projects:
+#         model_name = f"md_{i}"
+#         series_name = f"series_{i}"
+#         models[model_name] = ms.load_model(series_df[series_name],i)
+    # when week selected, get project hrs from every project
+
+    # Load Model
     if project in seasonal_projects:
         st.subheader('Forecasted Hours')
-        model = ml_model.load_model(agg_proj, project)
+        #model = ml_model.load_model(agg_proj, project)
+        series_name = f"series_{project}"
+        model = ms.load_model()
+        model.fit(series_df[series_name])
         hrs = model.predict(52)
         predict_df = hrs.pd_dataframe().reset_index()
         fig = px.line(predict_df, x='Year-week', y='NUMBERREGISTERED',title=f"Forecasted Hours for 52 weeks ", markers=True)
@@ -68,11 +86,51 @@ if __name__=="__main__":
 
     else:
         predict_df = agg_proj.groupby(['week']).agg({'NUMBERREGISTERED':'mean'}).reset_index()
-
         fig = px.line(predict_df, x='week', y='NUMBERREGISTERED',title=f"Avg Hours for 52 weeks", markers=True)
         st.plotly_chart(fig)
 
+    ############
+    project_hrs = {}
+    #forecast_week
+    for i in seasonal_projects:
+        series_name = f"series_{i}"
+        model = ms.load_model()
+        model.fit(series_df[series_name])
+        hrs = model.predict(52)
+        predict = hrs.pd_dataframe().reset_index()
+        predict = preprocess.addattributesdata(predict,'Year-week')
+        project_hrs[i] = predict.iloc[forecast_week-1]['NUMBERREGISTERED']
 
+    for i in non_seasonal_projects:
+        agg_proj_hrs = agg_data[(agg_data['PROJECTNAME']==i)]
+        avg_hrs = agg_proj_hrs.groupby(['week']).agg({'NUMBERREGISTERED':'mean'}).reset_index()
+        full_weeks = pd.DataFrame({'week': range(1, 53)})
+        avg_hrs = pd.merge(full_weeks, avg_hrs, on='week', how='left')
+        avg_hrs['NUMBERREGISTERED'] = avg_hrs['NUMBERREGISTERED'].fillna(0)
+        #st.write(avg_hrs)
+        project_hrs[i] = avg_hrs.iloc[forecast_week-1]['NUMBERREGISTERED']
+
+    #st.write(project_hrs)
+    ut = pd.read_csv('data/StdHourscsv.csv')
+    #billable hours weekly
+    billhrs = {}
+    for i in range(len(ut)):
+       intern = ut.iloc[i]['Intern']
+       billhrs.setdefault(ut.iloc[i]['Week Number'],{'Intern':intern, 'DC': ut.iloc[i]['DC'],'SEN':ut.iloc[i]['SEN'],'SU':ut.iloc[i]['SU'], 'MAN':ut.iloc[i]['MAN']})
+
+    eff = eff_percent/100
+    actual_billhrs ={key_value: round(billhrs[forecast_week][key_value]*eff,2) for key_value in billhrs[forecast_week]}
+    emp_bill = {key: (max_empcnt[key], actual_billhrs[key]) for key in actual_billhrs}
+    #emp_bill = {key: values for key, values in zip(actual_billhrs.keys(), zip(actual_billhrs.values(), max_empcnt.values()))}
+    project_hrs = {key: (value if value >= 0 else 0) for key, value in project_hrs.items()}
+    #st.write(project_hrs)
+    allocations, available_employees = emp_all.allocate_employees_to_projects(project_hrs, emp_bill)
+    #allocation_df = pd.DataFrame(allocations[project], index=[0])
+    #st.write(allocations[project])
+#     st.write(emp_bill)
+#     st.write(available_employees)
+
+    ############
     col1, col2 = st.columns(2)
     with col1:
     # pie chart
@@ -90,25 +148,17 @@ if __name__=="__main__":
         fig = px.pie(data, values='Values', names='Hours', title='Project Completion')
         st.plotly_chart(fig)
     # Table to show employee cnt categorically
-    ut = pd.read_csv('data/StdHourscsv.csv')
-    #billable hours weekl
-    billhrs = {}
-    for i in range(len(ut)):
-       intern = ut.iloc[i]['Intern']
-       billhrs.setdefault(ut.iloc[i]['Week Number'],{'Intern':intern, 'DC': ut.iloc[i]['DC'],'SEN':ut.iloc[i]['SEN'],'SU':ut.iloc[i]['SU'], 'MAN':ut.iloc[i]['MAN']})
 
-    eff = eff_percent/100
 
     with col2:
-        actual_billhrs ={key_value: round(billhrs[forecast_week][key_value]*eff,2) for key_value in billhrs[forecast_week]}
         #st.subheader("Hours Required")
         subcol1, subcol2 = st.columns(2)
         with subcol1:
             st.metric(label="Hours Required", value=round(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'],2))
         with subcol2:
             st.metric(label="Week", value=forecast_week)
-        emp_cat = employee_alloc.allocate_employees(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'], actual_billhrs, max_empcnt)
-        emp_cat_df = pd.DataFrame(emp_cat, index=[0])
+        #emp_cat = employee_alloc.allocate_employees(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'], actual_billhrs, max_empcnt)
+        emp_cat_df = pd.DataFrame(allocations[project], index=[0])
         actual_billhrs_df = pd.DataFrame(actual_billhrs, index=[0])
         # table
         table1 = go.Figure(data=[go.Table(
