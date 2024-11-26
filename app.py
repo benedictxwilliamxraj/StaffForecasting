@@ -86,6 +86,8 @@ if __name__=="__main__":
 
     else:
         predict_df = agg_proj.groupby(['week']).agg({'NUMBERREGISTERED':'mean'}).reset_index()
+        full_weeks = pd.DataFrame({'week': range(1, 53)})
+        predict_df = pd.merge(full_weeks, predict_df, on='week', how='left')
         fig = px.line(predict_df, x='week', y='NUMBERREGISTERED',title=f"Avg Hours for 52 weeks", markers=True)
         st.plotly_chart(fig)
 
@@ -107,9 +109,10 @@ if __name__=="__main__":
         full_weeks = pd.DataFrame({'week': range(1, 53)})
         avg_hrs = pd.merge(full_weeks, avg_hrs, on='week', how='left')
         avg_hrs['NUMBERREGISTERED'] = avg_hrs['NUMBERREGISTERED'].fillna(0)
-        #st.write(avg_hrs)
-        project_hrs[i] = avg_hrs.iloc[forecast_week-1]['NUMBERREGISTERED']
 
+
+        project_hrs[i] = avg_hrs.iloc[forecast_week-1]['NUMBERREGISTERED']
+    #st.write(project_hrs)
     #st.write(project_hrs)
     ut = pd.read_csv('data/StdHourscsv.csv')
     #billable hours weekly
