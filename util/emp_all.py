@@ -39,5 +39,5 @@ def allocate_employees_to_projects(projects, categories):
                 available_employees[category] -= assigned
         else:
             raise ValueError(f"Optimization failed for project {proj_name}: {result.message}")
-
+            #return {proj_name:f"Optimization failed for project"},{categories}
     return allocations, available_employees

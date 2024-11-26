@@ -127,7 +127,15 @@ if __name__=="__main__":
     #emp_bill = {key: values for key, values in zip(actual_billhrs.keys(), zip(actual_billhrs.values(), max_empcnt.values()))}
     project_hrs = {key: (value if value >= 0 else 0) for key, value in project_hrs.items()}
     #st.write(project_hrs)
-    allocations, available_employees = emp_all.allocate_employees_to_projects(project_hrs, emp_bill)
+    try:
+        allocations, available_employees = emp_all.allocate_employees_to_projects(project_hrs, emp_bill)
+        #st.write(allocations)
+    except:
+        allocations = {}
+        for i in agg_data['PROJECTNAME'].unique():
+            allocations[i] = {"Intern":'Optimization failed',"DC":'Optimization failed',"SEN":'Optimization failed',"SU":'Optimization failed',"MAN":'Optimization failed'}
+        #st.write(allocations)
+        available_employees = max_empcnt
     #allocation_df = pd.DataFrame(allocations[project], index=[0])
     #st.write(allocations[project])
 #     st.write(emp_bill)
