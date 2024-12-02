@@ -122,6 +122,7 @@ if __name__=="__main__":
        billhrs.setdefault(ut.iloc[i]['Week Number'],{'Intern':intern, 'DC': ut.iloc[i]['DC'],'SEN':ut.iloc[i]['SEN'],'SU':ut.iloc[i]['SU'], 'MAN':ut.iloc[i]['MAN']})
 
     eff = eff_percent/100
+    total_billhrs = {key_value: round(billhrs[forecast_week][key_value],2) for key_value in billhrs[forecast_week]}
     actual_billhrs ={key_value: round(billhrs[forecast_week][key_value]*eff,2) for key_value in billhrs[forecast_week]}
     emp_bill = {key: (max_empcnt[key], actual_billhrs[key]) for key in actual_billhrs}
     #emp_bill = {key: values for key, values in zip(actual_billhrs.keys(), zip(actual_billhrs.values(), max_empcnt.values()))}
@@ -163,14 +164,9 @@ if __name__=="__main__":
 
     with col2:
         #st.subheader("Hours Required")
-        subcol1, subcol2 = st.columns(2)
-        with subcol1:
-            st.metric(label="Hours Required", value=round(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'],2))
-        with subcol2:
-            st.metric(label="Week", value=forecast_week)
-        #emp_cat = employee_alloc.allocate_employees(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'], actual_billhrs, max_empcnt)
         emp_cat_df = pd.DataFrame(allocations[project], index=[0])
         actual_billhrs_df = pd.DataFrame(actual_billhrs, index=[0])
+        total_billhrs_df = pd.DataFrame(total_billhrs, index=[0])
         available_employees_df = pd.DataFrame(available_employees, index=[0])
         # table
         table1 = go.Figure(data=[go.Table(
@@ -203,15 +199,41 @@ if __name__=="__main__":
                                        fill_color='white',
                                        align='center',
                                        font=dict(size=12, color='black'))
+
                         )])
+        table4 = go.Figure(data=[go.Table(
+                                    header=dict(values=list(total_billhrs_df.columns),
+                                                fill_color='lightblue',
+                                                align='center',
+                                                font=dict(size=14, color='black')),
+                                    cells=dict(values=[total_billhrs_df[col] for col in total_billhrs_df.columns],
+                                               fill_color='white',
+                                               align='center',
+                                               font=dict(size=12, color='black'))
+
+                                )])
+        subcol1, subcol2 = st.columns(2)
+        with subcol1:
+            st.metric(label="Hours Required", value=round(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'],2))
+            st.subheader("Total Hours Billed")
+            table4.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=50,showlegend=False,template='plotly_white')
+            st.plotly_chart(table4, use_container_width=True)
+
+        with subcol2:
+            st.metric(label="Week", value=forecast_week)
+            st.subheader("Hours Billed")
+            table2.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=50,showlegend=False,template='plotly_white')
+            st.plotly_chart(table2, use_container_width=True)
+            #emp_cat = employee_alloc.allocate_employees(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'], actual_billhrs, max_empcnt)
+
         st.subheader("Employee Assigned")
-        table1.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=80,showlegend=False,template='plotly_white')  # Remove margin
-        table2.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=80,showlegend=False,template='plotly_white')
-        table3.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=90,showlegend=False,template='plotly_white')
+        table1.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=50,showlegend=False,template='plotly_white')  # Remove margin
+
+        table3.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=80,showlegend=False,template='plotly_white')
+
         st.plotly_chart(table1, use_container_width=True)
         #st.markdown("---")  # Add a horizontal line to separate the tables
-        st.subheader("Hours Billed")
-        st.plotly_chart(table2, use_container_width=True)
+
         st.subheader(f"Unassigned Employee count in week {forecast_week}")
         st.plotly_chart(table3, use_container_width=True)
 #         st.write(emp_cat_df)
