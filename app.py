@@ -217,13 +217,13 @@ if __name__=="__main__":
             st.metric(label="Hours Required", value=round(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'],2))
             st.subheader("Total Hours Billed")
             table4.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=50,showlegend=False,template='plotly_white')
-            st.plotly_chart(table4, use_container_width=True)
+            st.plotly_chart(table4,key="total_billhrs" ,use_container_width=True)
 
         with subcol2:
             st.metric(label="Week", value=forecast_week)
             st.subheader("Hours Billed")
             table2.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=50,showlegend=False,template='plotly_white')
-            st.plotly_chart(table2, use_container_width=True)
+            st.plotly_chart(table2,key="actual_billhrs", use_container_width=True)
             #emp_cat = employee_alloc.allocate_employees(pred_df.iloc[forecast_week-1]['NUMBERREGISTERED'], actual_billhrs, max_empcnt)
 
         st.subheader("Employee Assigned")
@@ -231,11 +231,11 @@ if __name__=="__main__":
 
         table3.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=80,showlegend=False,template='plotly_white')
 
-        st.plotly_chart(table1, use_container_width=True)
+        st.plotly_chart(table1,key="emp_assigned", use_container_width=True)
         #st.markdown("---")  # Add a horizontal line to separate the tables
 
         st.subheader(f"Unassigned Employee count in week {forecast_week}")
-        st.plotly_chart(table3, use_container_width=True)
+        st.plotly_chart(table3,key="emp_unassigned", use_container_width=True)
 #         st.write(emp_cat_df)
 #         st.write(actual_billhrs_df)
     # Employee count
