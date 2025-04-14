@@ -20,4 +20,4 @@ It helps businesses plan ahead by showing estimated staff requirements per week.
 `streamlit run app.py`
 
 # Screenshot
-![Workflow] (Workflow.png)
+![Workflow](Workflow.png)
