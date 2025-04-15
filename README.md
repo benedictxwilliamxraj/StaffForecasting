@@ -22,4 +22,4 @@ It helps businesses plan ahead by showing estimated staff requirements per week.
 # Screenshot
 ![Workflow](Workflow.png)
 ![Forecast](Forecast.png)
-![Optimised](Optimised.png)
+
